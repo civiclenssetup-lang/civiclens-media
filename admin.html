@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en-KE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CivicLens - CMS Admin Portal</title>
+<style>
+:root{--navy:#061A40;--red:#D71920;--bg:#F1F5F9;--card:#FFFFFF;--ink:#0F172A}
+*{box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);margin:0;padding:20px 16px}
+.header{max-width:600px;margin:0 auto 24px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:22px;color:var(--navy);margin:0}
+.admin-card{max-width:600px;margin:0 auto 24px;background:var(--card);padding:24px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.06);border:1px solid #E2E8F0}
+.admin-card h2{color:var(--navy);margin-top:0;font-size:18px;border-bottom:2px solid #F1F5F9;padding-bottom:12px;display:flex;align-items:center;gap:8px}
+.form-group{margin-bottom:16px}
+label{display:block;font-weight:700;margin-bottom:6px;font-size:13px;color:#475569;text-transform:uppercase;letter-spacing:0.03em}
+input, select, textarea{width:100%;padding:12px;border:1px solid #CBD5E1;border-radius:6px;font-size:15px;background:#F8FAFC;color:var(--ink)}
+input:focus, select:focus, textarea:focus{outline:none;border-color:var(--navy);background:#FFF}
+textarea{resize:vertical;min-height:90px}
+button{background:var(--red);color:#FFF;border:none;padding:14px;width:100%;font-weight:700;border-radius:6px;cursor:pointer;font-size:16px;transition:background 0.2s}
+button:hover{background:var(--navy)}
+.btn-blue{background:var(--navy)}
+.status{margin-top:12px;font-weight:700;font-size:14px;text-align:center;padding:8px;border-radius:4px;display:none}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>CIVIC<span style="color:var(--red)">LENS</span> CMS</h1>
+  <small style="color:#64748B;font-weight:600">Private Portal</small>
+</div>
+
+<!-- PUBLISH ARTICLE CARD -->
+<div class="admin-card">
+  <h2>📰 Publish News Headline</h2>
+  
+  <div class="form-group">
+    <label>Headline Title</label>
+    <input type="text" id="news-title" placeholder="e.g., Laikipia County Launches New Youth Initiative...">
+  </div>
+
+  <div class="form-group">
+    <label>Category</label>
+    <select id="news-cat">
+      <option value="Kenyan Politics">Kenyan Politics</option>
+      <option value="Laikipia Politics">Laikipia Politics</option>
+      <option value="Sports">Sports</option>
+      <option value="Celebrities">Celebrities</option>
+      <option value="Love & Relationships">Love & Relationships</option>
+      <option value="Fashion">Fashion</option>
+      <option value="Foods & Lifestyle">Foods & Lifestyle</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Image URL (Optional)</label>
+    <input type="url" id="news-img" placeholder="https://example.com/image.jpg">
+  </div>
+
+  <div class="form-group">
+    <label>Story Excerpt / Full Content</label>
+    <textarea id="news-excerpt" placeholder="Write the main story overview here..."></textarea>
+  </div>
+
+  <button onclick="publishNews()">Publish News Live</button>
+  <div class="status" id="news-status"></div>
+</div>
+
+<!-- EMBED VIDEO CARD -->
+<div class="admin-card">
+  <h2>🎥 Upload / Embed Video</h2>
+  
+  <div class="form-group">
+    <label>Video Title</label>
+    <input type="text" id="video-title" placeholder="e.g., Exclusive Documentary on Kenya's Digital Economy">
+  </div>
+
+  <div class="form-group">
+    <label>Video Category</label>
+    <select id="video-cat">
+      <option value="Documentary">Documentary</option>
+      <option value="Kenyan Politics">Kenyan Politics</option>
+      <option value="Laikipia Politics">Laikipia Politics</option>
+      <option value="Sports">Sports</option>
+      <option value="Celebrities">Celebrities</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label>Video Embed Link (YouTube Embed / Direct MP4 URL)</label>
+    <input type="url" id="video-url" placeholder="https://www.youtube.com/embed/VIDEO_ID">
+  </div>
+
+  <button class="btn-blue" onclick="publishVideo()">Publish Video Live</button>
+  <div class="status" id="video-status"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDEVKJnkv1CrBU...",
+    authDomain: "civiclens-gazette.firebaseapp.com",
+    projectId: "civiclens-gazette",
+    storageBucket: "civiclens-gazette.appspot.com",
+    messagingSenderId: "738732538346",
+    appId: "1:738732538346:web:416cc798fd93745e4e5a93"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  window.publishNews = async function() {
+    const title = document.getElementById('news-title').value.trim();
+    const cat = document.getElementById('news-cat').value;
+    const img = document.getElementById('news-img').value.trim();
+    const excerpt = document.getElementById('news-excerpt').value.trim();
+    const status = document.getElementById('news-status');
+
+    if(!title) return alert('Please enter a headline title.');
+
+    status.style.display = 'block';
+    status.style.background = '#FEF3C7';
+    status.style.color = '#92400E';
+    status.innerText = 'Publishing article live...';
+
+    try {
+      await addDoc(collection(db, "articles"), {
+        title: title,
+        category: cat,
+        imageUrl: img || '',
+        excerpt: excerpt || '',
+        createdAt: serverTimestamp(),
+        dateString: new Date().toLocaleDateString('en-KE', { day:'numeric', month:'short', year:'numeric' })
+      });
+
+      status.style.background = '#D1FAE5';
+      status.style.color = '#065F46';
+      status.innerText = '✓ Article Published Live to Homepage!';
+      
+      document.getElementById('news-title').value = '';
+      document.getElementById('news-img').value = '';
+      document.getElementById('news-excerpt').value = '';
+    } catch (e) {
+      console.error(e);
+      status.style.background = '#FEE2E2';
+      status.style.color = '#991B1B';
+      status.innerText = 'Error publishing article. Check connection.';
+    }
+  }
+
+  window.publishVideo = async function() {
+    const title = document.getElementById('video-title').value.trim();
+    const cat = document.getElementById('video-cat').value;
+    const url = document.getElementById('video-url').value.trim();
+    const status = document.getElementById('video-status');
+
+    if(!title || !url) return alert('Please enter video title and URL.');
+
+    status.style.display = 'block';
+    status.style.background = '#FEF3C7';
+    status.style.color = '#92400E';
+    status.innerText = 'Publishing video live...';
+
+    try {
+      await addDoc(collection(db, "videos"), {
+        title: title,
+        category: cat,
+        url: url,
+        createdAt: serverTimestamp(),
+        dateString: new Date().toLocaleDateString('en-KE', { day:'numeric', month:'short', year:'numeric' })
+      });
+
+      status.style.background = '#D1FAE5';
+      status.style.color = '#065F46';
+      status.innerText = '✓ Video Published Live to Gallery!';
+      
+      document.getElementById('video-title').value = '';
+      document.getElementById('video-url').value = '';
+    } catch (e) {
+      console.error(e);
+      status.style.background = '#FEE2E2';
+      status.style.color = '#991B1B';
+      status.innerText = 'Error publishing video. Check connection.';
+    }
+  }
+</script>
+</body>
+  </html>
+      
