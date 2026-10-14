@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en-KE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CivicLens Media Kenya</title>
+<meta name="description" content="Where Kenya's stories come into focus. Independent digital journalism, multimedia storytelling and strategic communications.">
+<style>
+:root{--navy:#061A40;--navy2:#082B63;--blue:#0B3A82;--red:#D71920;--paper:#F5F7FA;--ink:#111827;--soft:#64748B}
+*{box-sizing:border-box}html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.5 system-ui,-apple-system,sans-serif}
+a{color:inherit;text-decoration:none}
+header{position:sticky;top:0;z-index:5;background:var(--navy);color:#fff;border-bottom:2px solid var(--red)}
+.bar{max-width:1120px;margin:auto;height:56px;padding:0 16px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:800;font-size:18px}.logo i{font-style:normal;color:var(--red)}
+nav{display:flex;gap:16px;font-size:14px;font-weight:600}
+nav a:hover{color:var(--red)}
+.hero{background:var(--navy);color:#fff;padding:40px 16px;text-align:center}
+h1{font:700 clamp(28px,5vw,48px)/1.1 Georgia,serif;margin:10px 0}
+main{max-width:1120px;margin:auto;padding:32px 16px}
+h2{font-size:20px;font-weight:800;text-transform:uppercase;border-bottom:2px solid var(--navy2);padding-bottom:8px;margin:0 0 16px}
+.grid{display:grid;gap:16px}@media(min-width:760px){.grid{grid-template-columns:repeat(auto-fit, minmax(300px, 1fr))}}
+.card{background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.card .im{aspect-ratio:16/9;background:var(--navy2);display:grid;place-items:center;color:#fff;font-weight:700}
+.card .t{padding:16px}.card small{color:var(--red);font-weight:800;text-transform:uppercase;font-size:11px}
+.card p{margin:6px 0 0;font:700 17px/1.3 Georgia,serif}
+.video-container iframe, .video-container video{width:100%;aspect-ratio:16/9;border:none;border-radius:6px}
+footer{background:var(--navy);color:rgba(255,255,255,.7);text-align:center;font-size:13px;padding:20px;margin-top:40px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <span class="logo">CIVIC<i>LENS</i> <small style="font-size:10px;opacity:.7">MEDIA</small></span>
+    <nav>
+      <a href="#news">Newsroom</a>
+      <a href="#videos">Videos & Multimedia</a>
+      <a href="#support">Support Us</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <h1>Where Kenya's stories come into focus.</h1>
+  <p style="opacity:.8;max-width:600px;margin:auto;">Independent digital journalism, multimedia storytelling and strategic communications.</p>
+</section>
+
+<main>
+  <!-- VIDEO GALLERY SECTION -->
+  <section id="videos" style="margin-bottom:40px;">
+    <h2>Featured Videos & Documentaries</h2>
+    <div class="grid" id="video-grid">
+      <div class="card">
+        <div class="im">Loading Video...</div>
+        <div class="t"><small>Documentary</small><p>Latest Grassroots Coverage</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEWS ARTICLES SECTION -->
+  <section id="news">
+    <h2>Newsroom Headlines</h2>
+    <div class="grid" id="news-grid">
+      <div class="card">
+        <div class="im">CL</div>
+        <div class="t"><small>Politics</small><p>Loading latest dispatch from Nairobi...</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>CivicLens Media Kenya &middot; Where Kenya's stories come into focus.</footer>
+
+<!-- FIREBASE FETCH LOGIC -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDEVKJnkv1CrBU...",
+    authDomain: "civiclens-gazette.firebaseapp.com",
+    projectId: "civiclens-gazette",
+    storageBucket: "civiclens-gazette.appspot.com",
+    messagingSenderId: "738732538346",
+    appId: "1:738732538346:web:416cc798fd93745e4e5a93"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Fetch News Articles
+  async function loadArticles() {
+    const grid = document.getElementById('news-grid');
+    try {
+      const snapshot = await getDocs(collection(db, "articles"));
+      if(snapshot.empty) return;
+      grid.innerHTML = "";
+      snapshot.forEach(doc => {
+        const art = doc.data();
+        grid.innerHTML += `
+          <div class="card">
+            <div class="im">NEWS</div>
+            <div class="t">
+              <small>${art.category || 'General'}</small>
+              <p>${art.title}</p>
+            </div>
+          </div>`;
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  // Fetch Videos
+  async function loadVideos() {
+    const vGrid = document.getElementById('video-grid');
+    try {
+      const snapshot = await getDocs(collection(db, "videos"));
+      if(snapshot.empty) return;
+      vGrid.innerHTML = "";
+      snapshot.forEach(doc => {
+        const vid = doc.data();
+        vGrid.innerHTML += `
+          <div class="card">
+            <div class="video-container">
+              <iframe src="${vid.url}" allowfullscreen></iframe>
+            </div>
+            <div class="t">
+              <small>${vid.category || 'Video'}</small>
+              <p>${vid.title}</p>
+            </div>
+          </div>`;
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  loadArticles();
+  loadVideos();
+</script>
+</body>
+</html>
